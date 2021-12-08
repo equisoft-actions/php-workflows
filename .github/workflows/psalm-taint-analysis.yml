@@ -1,0 +1,61 @@
+name: psalm taint analysis
+
+on:
+  workflow_call:
+    inputs:
+      report-retention-days:
+        description: Duration in days to preserve reports.
+        required: false
+        default: "5"
+        type: string
+      gpr-key:
+        description: Personal access token to fetch private repos
+        required: false
+        default: ''
+        type: string
+      working-directory:
+        description: "Workflow working directory"
+        default: '.'
+        required: false
+        type: string
+      php-version:
+        description: 'Setup PHP version.'
+        default: '8.1'
+        required: true
+        type: string
+      extensions:
+        description: 'Setup PHP extensions.'
+        required: false
+        type: string
+
+jobs:
+  psalm-taint-analysis:
+    name: psalm taint analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.extensions }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@916373bce11c289a71c8a60c4d7b2a6368e96fa3
+        with:
+          gpr-key: ${{ inputs.gpr-key }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: psalm taint-analysis
+        working-directory: ${{ inputs.working-directory }}
+        shell: bash
+        run: ./vendor/bin/psalm --taint-analysis --report=psalm-taint-analysis.sarif
+
+      - name: Store results.sarif
+        uses: actions/upload-artifact@v2
+        with:
+          name: psalm-taint-analysis.sarif
+          path: ${{ inputs.working-directory }}/psalm-taint-analysis.sarif
+          retention-days: 30
