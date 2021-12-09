@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       report-retention-days:
-        description: Duration in days to preserve reports.
+        description: "Duration in days to preserve reports."
         required: false
         default: "5"
         type: string
@@ -59,20 +59,13 @@ jobs:
           extensions: ${{ inputs.extensions }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@18a0dc9a884c64b09e21b49173c2d23cad5bc8e2
+        uses: equisoft-actions/composer@v1.0.0
         with:
           gpr-key: ${{ secrets.gpr-key }}
           working-directory: ${{ inputs.working-directory }}
 
-      - name: psalm taint-analysis
-        working-directory: ${{ inputs.working-directory }}
-        shell: bash
-        run: ./vendor/bin/psalm --taint-analysis --report=psalm-taint-analysis.sarif
-
-      - name: Store results.sarif
-        uses: actions/upload-artifact@v2
-        if: "!cancelled()"
+      - name: Taint analysis
+        uses: equisoft-actions/psalm-taint-analysis@a3fd7897364efdfb78d8d4dc826dc9753df92a0b
         with:
-          name: psalm-taint-analysis.sarif
-          path: ${{ inputs.working-directory }}/psalm-taint-analysis.sarif
-          retention-days: 30
+          working-directory: ${{ inputs.working-directory }}
+          report-retention-days: ${{ inputs.report-retention-days }}
