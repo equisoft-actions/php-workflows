@@ -59,7 +59,7 @@ jobs:
           extensions: ${{ inputs.extensions }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@442ba88f61817ea57e7fda46cfbc8664fa14ceeb
+        uses: equisoft-actions/composer@18a0dc9a884c64b09e21b49173c2d23cad5bc8e2
         with:
           gpr-key: ${{ secrets.gpr-key }}
           working-directory: ${{ inputs.working-directory }}
@@ -71,6 +71,7 @@ jobs:
 
       - name: Store results.sarif
         uses: actions/upload-artifact@v2
+        if: "!cancelled()"
         with:
           name: psalm-taint-analysis.sarif
           path: ${{ inputs.working-directory }}/psalm-taint-analysis.sarif
