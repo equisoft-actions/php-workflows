@@ -8,11 +8,6 @@ on:
         required: false
         default: "5"
         type: string
-      gpr-key:
-        description: Personal access token to fetch private repos
-        required: false
-        default: ''
-        type: string
       working-directory:
         description: "Workflow working directory"
         default: '.'
@@ -27,14 +22,35 @@ on:
         description: 'Setup PHP extensions.'
         required: false
         type: string
+    secrets:
+      gpr-key:
+        description: Personal access token to fetch private repos
+        required: false
 
 jobs:
   psalm-taint-analysis:
     name: psalm taint analysis
     runs-on: ubuntu-latest
+    env:
+      cache-key: v1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Setup cache environment
+        id: extcache
+        uses: shivammathur/cache-extensions@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.extensions }}
+          key: ${{ env.cache-key }}
+
+      - name: Cache extensions
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.extcache.outputs.dir }}
+          key: ${{ steps.extcache.outputs.key }}
+          restore-keys: ${{ steps.extcache.outputs.key }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -43,9 +59,9 @@ jobs:
           extensions: ${{ inputs.extensions }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@916373bce11c289a71c8a60c4d7b2a6368e96fa3
+        uses: equisoft-actions/composer@442ba88f61817ea57e7fda46cfbc8664fa14ceeb
         with:
-          gpr-key: ${{ inputs.gpr-key }}
+          gpr-key: ${{ secrets.gpr-key }}
           working-directory: ${{ inputs.working-directory }}
 
       - name: psalm taint-analysis
