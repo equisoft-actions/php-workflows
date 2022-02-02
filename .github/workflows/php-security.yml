@@ -1,4 +1,4 @@
-name: psalm taint analysis
+name: PHP Security
 
 on:
   workflow_call:
@@ -22,9 +22,27 @@ on:
         description: 'Setup PHP extensions.'
         required: false
         type: string
+      defectdojo-publish:
+        description: "Publish sarif report to defectdojo"
+        default: false
+        required: false
+        type: boolean
+      defectdojo-url:
+        description: "DefectDojo URL"
+        default: ''
+        required: false
+        type: string
+      defectdojo-engagement:
+        description: "DefectDojo Engagement name or id"
+        default: ''
+        required: false
+        type: string
     secrets:
       gpr-key:
         description: Personal access token to fetch private repos
+        required: false
+      defectdojo-token:
+        description: DefectDojo API Token
         required: false
 
 jobs:
@@ -51,7 +69,11 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
-        uses: equisoft-actions/psalm-taint-analysis@v1.0.0
+        uses: equisoft-actions/psalm-taint-analysis@v1.1.0
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
+          defectdojo-publish: ${{ inputs.defectdojo-publish }}
+          defectdojo-url: ${{ inputs.defectdojo-url }}
+          defectdojo-engagement: ${{ inputs.defectdojo-engagement }}
+          defectdojo-token: ${{ secrets.defectdojo-token }}
