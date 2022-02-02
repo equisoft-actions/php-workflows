@@ -27,11 +27,6 @@ on:
         default: false
         required: false
         type: boolean
-      defectdojo-url:
-        description: "DefectDojo URL"
-        default: ''
-        required: false
-        type: string
       defectdojo-engagement:
         description: "DefectDojo Engagement name or id"
         default: ''
@@ -40,6 +35,9 @@ on:
     secrets:
       gpr-key:
         description: Personal access token to fetch private repos
+        required: false
+      defectdojo-url:
+        description: DefectDojo URL
         required: false
       defectdojo-token:
         description: DefectDojo API Token
@@ -74,6 +72,6 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
           defectdojo-publish: ${{ inputs.defectdojo-publish }}
-          defectdojo-url: ${{ inputs.defectdojo-url }}
+          defectdojo-url: ${{ secrets.defectdojo-url }}
           defectdojo-engagement: ${{ inputs.defectdojo-engagement }}
           defectdojo-token: ${{ secrets.defectdojo-token }}
