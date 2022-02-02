@@ -22,14 +22,23 @@ on:
         description: 'Setup PHP extensions.'
         required: false
         type: string
-      defectdojo-publish:
-        description: "Publish sarif report to defectdojo"
+      publish-reports:
+        description: "Publish SARIF and SBOM reports to Defect Dojo and Dependency Track respectively."
         default: false
         required: false
         type: boolean
       defectdojo-engagement:
         description: "DefectDojo Engagement name or id"
         default: ''
+        required: false
+        type: string
+      dependency-track-project-name:
+        description: Project name for Dependency Track.
+        required: false
+        type: string
+      dependency-track-project-version:
+        description: Project name for Dependency Track. Typically the default branch unless multiple forks are maintained.
+        default: main
         required: false
         type: string
     secrets:
@@ -42,13 +51,20 @@ on:
       defectdojo-token:
         description: DefectDojo API Token
         required: false
+      dependency-track-url:
+        description: URL to the Dependency Track instance to publish the SBOM to.
+        required: false
+      dependency-track-api-key:
+        description: API key of the Dependency Track instance.
+        required: false
+
+env:
+  php-cache-key: v1
 
 jobs:
   psalm-taint-analysis:
     name: psalm taint analysis
     runs-on: ubuntu-latest
-    env:
-      cache-key: v1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -58,7 +74,7 @@ jobs:
         with:
           php-version: ${{ inputs.php-version }}
           extensions: ${{ inputs.extensions }}
-          cache-key: ${{ env.cache-key }}
+          cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
         uses: equisoft-actions/composer@v1.0.0
@@ -71,7 +87,38 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
-          defectdojo-publish: ${{ inputs.defectdojo-publish }}
+          defectdojo-publish: ${{ inputs.publish-reports }}
           defectdojo-url: ${{ secrets.defectdojo-url }}
           defectdojo-engagement: ${{ inputs.defectdojo-engagement }}
           defectdojo-token: ${{ secrets.defectdojo-token }}
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1.0.0
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1.0.0
+        with:
+          gpr-key: ${{ secrets.gpr-key }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Generate SBOM
+        uses: equisoft-actions/composer-sbom@v1.0.0
+        with:
+          dependency-track-api-key: ${{ secrets.dependency-track-api-key }}
+          dependency-track-url: ${{ secrets.dependency-track-url }}
+          dependency-track-project-name: ${{ inputs.dependency-track-project-name }}
+          dependency-track-project-version: ${{ inputs.dependency-track-project-version }}
+          publish: ${{ inputs.publish-reports }}
+          report-retention-days: ${{ inputs.report-retention-days }}
+          working-directory: ${{ inputs.working-directory }}
