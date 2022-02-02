@@ -1,4 +1,4 @@
-name: psalm taint analysis
+name: PHP Security
 
 on:
   workflow_call:
@@ -69,7 +69,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
-        uses: equisoft-actions/psalm-taint-analysis@3ba2179bce6b65af002299a97e09094f44667d0e
+        uses: equisoft-actions/psalm-taint-analysis@v1.1.0
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
