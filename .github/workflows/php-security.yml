@@ -77,7 +77,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1.0.0
+        uses: equisoft-actions/composer@v1.0.1
         with:
           gpr-key: ${{ secrets.gpr-key }}
           working-directory: ${{ inputs.working-directory }}
@@ -107,7 +107,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1.0.0
+        uses: equisoft-actions/composer@v1.0.1
         with:
           gpr-key: ${{ secrets.gpr-key }}
           working-directory: ${{ inputs.working-directory }}
