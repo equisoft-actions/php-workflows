@@ -42,19 +42,19 @@ on:
         required: false
         type: string
     secrets:
-      gpr-key:
+      GPR_KEY:
         description: Personal access token to fetch private repos
         required: false
-      defectdojo-url:
+      DEFECTDOJO_URL:
         description: DefectDojo URL
         required: false
-      defectdojo-token:
+      DEFECTDOJO_TOKEN:
         description: DefectDojo API Token
         required: false
-      dependency-track-url:
+      DEPENDENCY_TRACK_URL:
         description: URL to the Dependency Track instance to publish the SBOM to.
         required: false
-      dependency-track-api-key:
+      DEPENDENCY_TRACK_API_KEY:
         description: API key of the Dependency Track instance.
         required: false
 
@@ -79,7 +79,7 @@ jobs:
       - name: Composer install
         uses: equisoft-actions/composer@v1.0.1
         with:
-          gpr-key: ${{ secrets.gpr-key }}
+          gpr-key: ${{ secrets.GPR_KEY}}
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
@@ -88,9 +88,9 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
           defectdojo-publish: ${{ inputs.publish-reports }}
-          defectdojo-url: ${{ secrets.defectdojo-url }}
+          defectdojo-url: ${{ secrets.DEFECTDOJO_URL }}
           defectdojo-engagement: ${{ inputs.defectdojo-engagement }}
-          defectdojo-token: ${{ secrets.defectdojo-token }}
+          defectdojo-token: ${{ secrets.DEFECTDOJO_TOKEN }}
 
   sbom:
     name: Generate SBOM
@@ -109,14 +109,14 @@ jobs:
       - name: Composer install
         uses: equisoft-actions/composer@v1.0.1
         with:
-          gpr-key: ${{ secrets.gpr-key }}
+          gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
 
       - name: Generate SBOM
         uses: equisoft-actions/composer-sbom@v1.0.0
         with:
-          dependency-track-api-key: ${{ secrets.dependency-track-api-key }}
-          dependency-track-url: ${{ secrets.dependency-track-url }}
+          dependency-track-api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          dependency-track-url: ${{ secrets.DEPENDENCY_TRACK_URL }}
           dependency-track-project-name: ${{ inputs.dependency-track-project-name }}
           dependency-track-project-version: ${{ inputs.dependency-track-project-version }}
           publish: ${{ inputs.publish-reports }}
