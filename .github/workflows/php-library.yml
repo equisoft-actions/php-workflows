@@ -9,7 +9,7 @@ on:
           default: phpunit,phpcs,psalm
           available checks: phpunit,phpcs,psalm
         required: false
-        default: "static_analysis,unit_tests,lint_dockerfiles"
+        default: "phpunit,phpcs,psalm"
         type: string
       report-retention-days:
         description: "Duration in days to preserve reports."
@@ -119,7 +119,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : PHP_Codesniffer
-        uses : equisoft-actions/phpcs@d785656bdcde3fba79ab65ddfa06a8c36f285c4e
+        uses : equisoft-actions/phpcs@c9b6f943ab5ed3a4abee0d624df104cd608861a7
         with:
           default-branch: master
           working-directory: ${{ inputs.working-directory }}
