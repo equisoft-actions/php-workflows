@@ -90,7 +90,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : Psalm
-        uses : equisoft-actions/psalm@d20b22f986d0f3fa555f9e67e3f14e0f1f874570
+        uses : equisoft-actions/psalm@v0.0.2
         with:
           working-directory: ${{ inputs.working-directory }}
           default-branch: master
@@ -119,7 +119,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : PHP_Codesniffer
-        uses : equisoft-actions/phpcs@c9b6f943ab5ed3a4abee0d624df104cd608861a7
+        uses : equisoft-actions/phpcs@v0.0.1
         with:
           default-branch: master
           working-directory: ${{ inputs.working-directory }}
