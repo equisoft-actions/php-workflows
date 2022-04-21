@@ -83,7 +83,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
-        uses: equisoft-actions/psalm-taint-analysis@v1.1.0
+        uses: equisoft-actions/psalm-taint-analysis@v1.2.0
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
