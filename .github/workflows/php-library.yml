@@ -30,6 +30,16 @@ on:
         description: 'Setup PHP extensions.'
         required: false
         type: string
+      phpunit-extra-args:
+        description: 'Provide extra arguments to phpunit check'
+        default: ''
+        required: false
+        type: string
+      psalm-extra-args:
+        description: 'Provide extra arguments to psalm check'
+        default: '--no-cache --no-diff'
+        required: false
+        type: string
     secrets:
       GPR_KEY:
         description: Personal access token to fetch private repos
@@ -66,6 +76,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
+          extra-args: ${{ inputs.phpunit-extra-args }}
 
   psalm:
     name: Psalm
@@ -94,7 +105,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
           default-branch: master
-          extra-args: --no-cache --no-diff
+          extra-args: ${{ inputs.psalm-extra-args }}
 
   phpcs:
     name: PHP_Codesniffer
