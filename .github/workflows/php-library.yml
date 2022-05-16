@@ -145,6 +145,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY}}
+          working-directory: ${{ inputs.working-directory }}
+
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v5.0.2
 
