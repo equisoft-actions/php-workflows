@@ -106,6 +106,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           default-branch: master
           extra-args: ${{ inputs.psalm-extra-args }}
+          php-version: ${{ inputs.php-version }}
 
   phpcs:
     name: PHP_Codesniffer
