@@ -7,7 +7,7 @@ on:
         description: |
           List of enabled check separated by comma.
           default: phpunit,phpcs,psalm
-          available checks: phpunit,phpcs,psalm
+          available checks: phpunit,phpcs,psalm,qodana
         required: false
         default: "phpunit,phpcs,psalm"
         type: string
@@ -136,6 +136,31 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
 
+  qodana:
+    name: Qodana
+    runs-on: ubuntu-latest
+    if: contains(inputs.checks, 'qodana')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY}}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: 'Qodana Scan'
+        uses: JetBrains/qodana-action@v5.0.2
+
   notify:
     name: Notify
     runs-on: ubuntu-latest
@@ -143,6 +168,7 @@ jobs:
       - psalm
       - phpunit
       - phpcs
+      - qodana
     if: failure() && github.event_name == 'push'
     steps:
       - name: Post workflow status
