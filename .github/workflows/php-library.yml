@@ -159,7 +159,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v5.0.2
+        uses: JetBrains/qodana-action@v5.1.0
 
   notify:
     name: Notify
