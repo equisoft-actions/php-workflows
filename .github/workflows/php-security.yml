@@ -23,39 +23,13 @@ on:
         required: false
         type: string
       publish-reports:
-        description: "Publish SARIF and SBOM reports to Defect Dojo and Dependency Track respectively."
-        default: false
+        description: "Publish SARIF and SBOM reports to Github."
+        default: true
         required: false
         type: boolean
-      defectdojo-engagement:
-        description: "DefectDojo Engagement name or id"
-        default: ''
-        required: false
-        type: string
-      dependency-track-project-name:
-        description: Project name for Dependency Track.
-        required: false
-        type: string
-      dependency-track-project-version:
-        description: Project name for Dependency Track. Typically the default branch unless multiple forks are maintained.
-        default: main
-        required: false
-        type: string
     secrets:
       GPR_KEY:
         description: Personal access token to fetch private repos
-        required: false
-      DEFECTDOJO_URL:
-        description: DefectDojo URL
-        required: false
-      DEFECTDOJO_TOKEN:
-        description: DefectDojo API Token
-        required: false
-      DEPENDENCY_TRACK_URL:
-        description: URL to the Dependency Track instance to publish the SBOM to.
-        required: false
-      DEPENDENCY_TRACK_API_KEY:
-        description: API key of the Dependency Track instance.
         required: false
 
 env:
@@ -83,14 +57,10 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
-        uses: equisoft-actions/psalm-taint-analysis@v1
+        uses: equisoft-actions/psalm-taint-analysis@v2
         with:
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
-          defectdojo-publish: ${{ inputs.publish-reports }}
-          defectdojo-url: ${{ secrets.DEFECTDOJO_URL }}
-          defectdojo-engagement: ${{ inputs.defectdojo-engagement }}
-          defectdojo-token: ${{ secrets.DEFECTDOJO_TOKEN }}
 
   sbom:
     name: Generate SBOM
@@ -113,12 +83,8 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Generate SBOM
-        uses: equisoft-actions/composer-sbom@v1
+        uses: equisoft-actions/composer-sbom@v2
         with:
-          dependency-track-api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
-          dependency-track-url: ${{ secrets.DEPENDENCY_TRACK_URL }}
-          dependency-track-project-name: ${{ inputs.dependency-track-project-name }}
-          dependency-track-project-version: ${{ inputs.dependency-track-project-version }}
           publish: ${{ inputs.publish-reports }}
           report-retention-days: ${{ inputs.report-retention-days }}
           working-directory: ${{ inputs.working-directory }}
