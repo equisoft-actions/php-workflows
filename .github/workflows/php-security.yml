@@ -22,6 +22,11 @@ on:
         description: 'Setup PHP extensions.'
         required: false
         type: string
+      generate-sbom:
+        description: 'Generates and uploads SBOM.'
+        required: false
+        type: boolean
+        default: false
       publish-reports:
         description: "Publish SARIF and SBOM reports to Github."
         default: true
@@ -65,6 +70,7 @@ jobs:
   sbom:
     name: Generate SBOM
     runs-on: ubuntu-latest
+    if: inputs.generate-sbom == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
