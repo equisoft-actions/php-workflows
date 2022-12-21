@@ -1,0 +1,766 @@
+name: PHP Application
+
+on:
+  workflow_call:
+    inputs:
+      checks:
+        description: |
+          List of enabled check separated by comma.
+          default: phpunit,phpcs,psalm
+          available checks: phpunit,phpcs,psalm
+        required: false
+        default: "phpunit,phpcs,psalm"
+        type: string
+      frontend:
+        default: true
+        description: Set to false for backend-only projects.
+        required: false
+        type: boolean
+      images:
+        description: 'Dockers images to build. Object where the key is the image name and the value the Dockerfile. e.g. "{"crm-worker": "Dockerfile-worker"}'
+        required: true
+        type: string
+      openapi-bootstrap:
+        description: 'Path to pass as --bootstrap argument to the openapi generator'
+        required: false
+        type: string
+      openapi-paths:
+        description: 'Paths to include when invoking openapi generator'
+        required: false
+        type: string
+      php-extensions:
+        description: 'Setup PHP extensions.'
+        required: false
+        type: string
+      php-quality-pr-only:
+        default: false
+        description: 'If true, runs quality checks only on PRs. Related to `psalm-diff-only` and `phpcs-diff-only`'
+        required: false
+        type: boolean
+      php-version:
+        description: 'Setup PHP version.'
+        default: '8.1'
+        required: false
+        type: string
+      phpcs-diff-only:
+        default: false
+        description: 'If true, runs phpcs only on changed files'
+        required: false
+        type: boolean
+      phpunit-extra-args:
+        description: 'Provide extra arguments to phpunit check'
+        default: ''
+        required: false
+        type: string
+      psalm-diff-only:
+        default: false
+        description: 'If true, runs psalm only on changed files'
+        required: false
+        type: boolean
+      psalm-extra-args:
+        description: 'Provide extra arguments to psalm check'
+        default: '--no-cache --no-diff'
+        required: false
+        type: string
+      sdks:
+        description: 'List of sdks to build'
+        default: '["php", "typescript", "micronaut", "kotlin"]'
+        required: false
+        type: string
+      sentry-project:
+        description: 'Sentry project name'
+        required: false
+        type: string
+      site-config-path:
+        description: 'Path of the dev/docker siteconfig to generate. None if empty.'
+        default: ''
+        required: false
+        type: string
+      skip-duplicate-do-not-skip:
+        default: '["push", "schedule", "workflow_dispatch"]'
+        description: 'Array of events that requires all checks to be run'
+        required: false
+        type: string
+      skip-duplicate-backend-paths:
+        default: '[]'
+        description: 'Array of paths to skip for the backend'
+        required: false
+        type: string
+      skip-duplicate-frontend-paths:
+        default: '[]'
+        description: 'Array of paths to skip for the frontend'
+        required: false
+        type: string
+      update-wsdl:
+        default: false
+        description: 'If true, runs UpdateWSDL tool.'
+        required: false
+        type: boolean
+      working-directory:
+        description: "Workflow working directory"
+        default: '.'
+        required: false
+        type: string
+      yaml-validate:
+        default: true
+        description: 'If true, runs YamlLint from ./internal/scripts/YamlLint.php.'
+        required: false
+        type: boolean
+    secrets:
+      ECR_AWS_ACCESS_KEY_ID:
+        description: An AWS access key ID that has write permissions to the registry.
+        required: true
+      ECR_AWS_REGION:
+        description: AWS region for the registry.
+        required: true
+      ECR_AWS_SECRET_ACCESS_KEY:
+        description: An AWS secret access key that has write permissions to the registry.
+        required: true
+      ECR_REGISTRY:
+        description: The AWS ECR registry where the image will be pushed to.
+        required: true
+      GPR_KEY:
+        description: Personal access token to fetch private repos
+        required: false
+      GPR_USER:
+        description: A username with write access to Github Package registry.
+        required: true
+      SENTRY_AUTH_TOKEN:
+        description: 'Sentry auth token'
+        required: false
+      SENTRY_ORG:
+        description: 'Sentry organization'
+        required: false
+      SLACK_NOTIFICATION_WEBHOOK_URL:
+        description: A Slack webhook where workflow failures will be published to.
+        required: true
+
+env:
+  php-cache-key: v1
+
+jobs:
+  pre-checks:
+    name: Pre-checks
+    runs-on: ubuntu-latest
+    outputs:
+      should-skip-backend: ${{ steps.skip-check-backend.outputs.should_skip }}
+      should-skip-frontend: ${{ steps.skip-check-frontend.outputs.should_skip }}
+    steps:
+      - id: skip-check-backend
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: same_content
+          do_not_skip: ${{ inputs.skip-duplicate-do-not-skip }}
+          paths: ${{ inputs.skip-duplicate-backend-paths }}
+          skip_after_successful_duplicate: true
+      - id: skip-check-frontend
+        uses: fkirc/skip-duplicate-actions@v5
+        if: inputs.frontend
+        with:
+          concurrent_skipping: same_content
+          do_not_skip: ${{ inputs.skip-duplicate-do-not-skip }}
+          paths: ${{ inputs.skip-duplicate-frontend-paths }}
+          skip_after_successful_duplicate: true
+
+  setup:
+    name: Setup
+    needs: [pre-checks]
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' || (inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true') }}
+    runs-on: ubuntu-latest
+    outputs:
+      is-release: ${{ steps.metadata.outputs.is-release }}
+      publishable: ${{ steps.metadata.outputs.publishable }}
+      version: ${{ steps.metadata.outputs.version }}
+      is-hotfix: ${{ steps.metadata.outputs.is-hotfix }}
+      images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
+      run-php-long-checks: ${{ steps.outputs.outputs.run-php-long-checks }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1000
+
+      - name: Fetch branches (for action-metadata commit check)
+        run: |
+          default_branch="${{ github.event.repository.default_branch }}"
+          git fetch --no-tags --prune --depth=1000 origin +refs/heads/$default_branch:refs/remotes/origin/$default_branch '+refs/heads/release/*:refs/remotes/origin/release/*'
+
+      - name: Generate outputs
+        shell: bash
+        id: outputs
+        run: |
+          RUN_PHP_LONG_CHECKS="false"
+          if [[ "${{ needs.pre-checks.outputs.should-skip-backend }}" != "true" ]]; then
+            if [[ "${{ inputs.php-checks-pr-only }}" != "true" ]]; then
+              RUN_PHP_LONG_CHECKS="true"
+            elif [[ "${{ inputs.php-checks-pr-only }}" == "true" && "${{ github.event_name }}" == "pull_request" ]]; then
+              RUN_PHP_LONG_CHECKS="true"
+            fi
+          fi
+          echo "run-php-long-checks=${RUN_PHP_LONG_CHECKS}" >> $GITHUB_OUTPUT
+
+      - name: Find application metadata
+        id: metadata
+        uses: equisoft-actions/application-metadata@v1
+        with:
+          release-branch: master
+          hotfix-branch-prefix: release/
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Install NPM dependencies
+        uses: equisoft-actions/yarn-install@v1
+
+      - name: Generate complex outputs
+        id: complex-outputs
+        shell: python
+        env:
+          IMAGES: ${{ inputs.images }}
+        run: |
+          import json
+          import os
+
+          parsed: dict = json.loads(os.environ.get("IMAGES"))
+          include = []
+          for image_name in parsed:
+            include.append({"image": image_name, "dockerfile": parsed[image_name]})
+
+          with open(os.environ.get('GITHUB_OUTPUT'), 'a') as output_file:
+            output_file.write('images-matrix=')
+            json.dump({"include": include}, output_file)
+            output_file.write('\n')
+
+  phpunit:
+    name: PHPUnit
+    needs: [setup]
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: PHPUnit
+        uses: equisoft-actions/phpunit@v1
+        with:
+          extra-args: ${{ inputs.phpunit-extra-args }}
+
+
+  phpunit-it:
+    name: PHPUnit IT
+    needs: [setup]
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: PHPUnit
+        uses: equisoft-actions/phpunit@v1
+        with:
+          report-name: phpunit-it.junit.xml
+          coverage-report-name: phpunit-it.clover.xml
+          extra-args: --testsuite it ${{ inputs.phpunit-extra-args }}
+
+  psalm:
+    name: Psalm
+    needs: [setup]
+    if: ${{ needs.setup.outputs.run-php-long-checks == 'true' && contains(inputs.checks, 'psalm') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1000
+
+      - name: Fetch origin branch (for psalm git diff)
+        run: |
+          BASE_REF=${{ github.event.pull_request.base.ref }}
+          if [[ "$BASE_REF" = "" ]]; then
+            BASE_REF=${{ github.event.repository.default_branch }}
+          fi
+          git fetch --no-tags --prune --depth=1000 origin +refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: Psalm
+        uses: equisoft-actions/psalm@v2
+        with:
+          default-branch: ${{ github.event.repository.default_branch }}
+          extra-args: ${{ inputs.psalm-extra-args }}
+          only-changed-files: ${{ inputs.psalm-diff-only }}
+
+  phpcs:
+    name: PHP_Codesniffer
+    needs: [setup]
+    if: ${{ needs.setup.outputs.run-php-long-checks == 'true' && contains(inputs.checks, 'phpcs') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1000
+
+      - name: Fetch origin branch (for phpcs git diff)
+        run: |
+          BASE_REF=${{ github.event.pull_request.base.ref }}
+          if [[ "$BASE_REF" = "" ]]; then
+            BASE_REF=${{ github.event.repository.default_branch }}
+          fi
+          git fetch --no-tags --prune --depth=1000 origin +refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: PHP_Codesniffer
+        uses: equisoft-actions/phpcs@v2
+        with:
+          only-changed-files: ${{ inputs.phpcs-diff-only }}
+          default-branch: ${{ github.event.repository.default_branch }}
+
+  eslint:
+    name: ESLint
+    needs:
+      - setup
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Install NPM dependencies
+        uses: equisoft-actions/yarn-install@v1
+
+      - name: Run ESLint
+        uses: equisoft-actions/yarn-eslint@v2
+
+  mocha:
+    name: Mocha
+    needs:
+      - setup
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Install NPM dependencies
+        uses: equisoft-actions/yarn-install@v1
+
+      - name: Run Mocha
+        uses: equisoft-actions/yarn-mocha@v1
+
+  yaml_validate:
+    name: Yaml validation
+    needs: [setup]
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && inputs.yaml-validate }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: Yaml validation
+        run: php ./internals/scripts/YamlLint.php
+
+  build_backend:
+    name: Build backend
+    needs:
+      - setup
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Update package version
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+        run: |
+          # Composer versions must match ^v?\d+(\.\d+){0,3}|^dev-
+          if [[ $VERSION =~ ^v?[0-9]+(\.[0-9]+){0,3}$ ]]; then
+            APP_VERSION="$VERSION";
+          else
+            APP_VERSION="dev-$VERSION";
+          fi
+          contents="$(jq ".version = \"${APP_VERSION}\"" ./composer.json)" && echo "${contents}" > ./composer.json
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          production: "true"
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: Site Config
+        if: inputs.site-config-path != ''
+        shell: bash
+        run: |
+          sudo mkdir -p $(dirname ${{ inputs.site-config-path }})
+          sudo cat <<EOF > /tmp/configs.yml
+          ---
+          environment: dev
+          site: docker
+          EOF
+          sudo mv /tmp/configs.yml "${{ inputs.site-config-path }}"
+
+      - name: Generate WSDL Files
+        if: inputs.update-wsdl
+        shell: bash
+        run: |
+          ./script/tool API UpdateWsdl -v
+
+      - name: Tar build output
+        run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
+
+      - name: Store build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-build-output
+          path: backend-build-output.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  build_frontend:
+    name: Build frontend
+    needs:
+      - setup
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Update package version
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+        run: |
+          contents="$(jq ".version = \"${VERSION}\"" ./package.json)" && echo "${contents}" > ./package.json
+
+      - name: NPM Login
+        uses: equisoft-actions/yarn-npm-login@v1
+        with:
+          registry: npm.pkg.github.com
+          token: ${{ secrets.GPR_KEY }}
+
+      - name: Install NPM dependencies
+        uses: equisoft-actions/yarn-install@v1
+
+      - name: Webpack
+        working-directory: .
+        run: |
+          SKIP_COMPRESSION=true
+          if [[ "${{ needs.setup.outputs.publishable }}" == "true" ]]; then
+            SKIP_COMPRESSION=false
+          fi
+          NO_COMPRESS=${SKIP_COMPRESSION} yarn build:production
+
+      - name: Tar build output
+        run: tar -cvf frontend-build-output.tar $(ls -d package.json public/ 2>/dev/null)
+
+      - name: Store build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build-output
+          path: frontend-build-output.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  image:
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
+    name: Build ${{ matrix.image }} image
+    needs:
+      - setup
+      - phpunit
+      - phpunit-it
+      - eslint
+      - mocha
+      - yaml_validate
+      - build_backend
+      - build_frontend
+    # Because psalm is skipped we have to define all success explicitly
+    if: |
+      needs.setup.outputs.publishable == 'true' &&
+      !failure() &&
+      !cancelled() &&
+      success('phpunit') &&
+      success('phpunit-it') &&
+      success('eslint') &&
+      success('mocha') &&
+      success('yaml_validate') &&
+      success('build_backend') &&
+      success('build_frontend')
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download backend build output
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-build-output
+          path: .
+
+      - name: Un-tar backend build output
+        run: tar -xvf backend-build-output.tar
+
+      - name: Download frontend build output
+        if: inputs.frontend
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build-output
+          path: .
+
+      - name: Un-tar frontend build output
+        if: inputs.frontend
+        run: tar -xvf frontend-build-output.tar
+
+      - name: Determine platforms to build
+        id: platforms
+        shell: bash
+        run: |
+          if [[ "${{ needs.setup.outputs.is-release }}" == "true" ]]; then
+            PLATFORMS="linux/amd64"
+          else
+            PLATFORMS="linux/amd64,linux/arm64"
+          fi
+          echo "platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        id: build-and-push
+        uses: equisoft-actions/docker-build-and-push@v1
+        with:
+          registry: ${{ secrets.ECR_REGISTRY }}
+          aws-access-key-id: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ECR_AWS_REGION }}
+          build-args: |
+            APPLICATION_VERSION=${{ needs.setup.outputs.version }}
+            GPR_USER=${{ secrets.GPR_USER }}
+            GPR_KEY=${{ secrets.GPR_KEY }}
+          name: ${{ matrix.image }}
+          dockerfile: ${{ matrix.dockerfile }}
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          push: true
+          is-release: ${{ needs.setup.outputs.is-release }}
+          version: ${{ needs.setup.outputs.version }}
+
+  openapi_yaml:
+    name: Generate openapi.yaml
+    needs: [setup]
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Composer install
+        uses: equisoft-actions/composer@v1
+        with:
+          gpr-key: ${{ secrets.GPR_KEY }}
+
+      - name: Generate openapi.yaml
+        id: generate
+        run: |
+          mkdir -p openapi/build
+          arguments='${{ join(fromJSON(inputs.openapi-paths), ' ') }}'
+
+          if [[ -n "${{ inputs.openapi-bootstrap }}" ]];
+          then
+            arguments="--bootstrap "${{ inputs.openapi-bootstrap }}" $arguments"
+          fi
+
+          ./vendor/bin/openapi \
+            -o openapi/build/openapi.yaml \
+            --format yaml \
+            $arguments
+
+      - name: Store openapi.yaml
+        uses: actions/upload-artifact@v3
+        with:
+          name: openapi_yaml
+          path: openapi/build/openapi.yaml
+          retention-days: 1
+          if-no-files-found: error
+
+  generate_sdk:
+    strategy:
+      matrix:
+        generator: ${{ fromJSON(inputs.sdks) }}
+    name: Generate ${{ matrix.generator }} SDK
+    needs:
+      - setup
+      - phpunit
+      - openapi_yaml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download
+        uses: actions/download-artifact@v3
+        with:
+          name: openapi_yaml
+          path: openapi/build
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: Setup PHP
+        uses: equisoft-actions/setup-php@v1
+        if: matrix.generator == 'php'
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          cache-key: ${{ env.php-cache-key }}
+
+      - name: Generate SDK
+        uses: equisoft-actions/generate-openapi-sdk@v1
+        with:
+          working-directory: openapi
+          generator-name: ${{ matrix.generator }}
+          openapi-spec-file: build/openapi.yaml
+          is-release: ${{ needs.setup.outputs.is-release }}
+          publish: ${{ needs.setup.outputs.publishable == 'true' && needs.setup.outputs.is-hotfix != 'true' }}
+          publish-pat: ${{ secrets.GPR_KEY }}
+          gradle-properties: |
+            application.version=${{ needs.setup.outputs.version }}
+            gpr.user=${{ secrets.GPR_USER }}
+            gpr.key=${{ secrets.GPR_KEY }}
+            gpr.write.key=${{ secrets.GPR_KEY }}
+
+  createSentryRelease:
+    name: Create sentry release
+    needs:
+      - setup
+      - image
+
+    if: needs.setup.outputs.is-release == 'true' && inputs.sentry-project != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ inputs.sentry-project }}
+        with:
+          version: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
+          version_prefix: ''
+          set_commits: auto
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs:
+      - psalm
+      - phpunit
+      - phpunit-it
+      - phpcs
+      - generate_sdk
+      - eslint
+      - mocha
+      - yaml_validate
+      - build_backend
+      - build_frontend
+      - image
+      - createSentryRelease
+    if: failure() && github.event_name == 'push'
+    steps:
+      - name: Post workflow status
+        uses: equisoft-actions/notify-workflow-status@v1
+        with:
+          needs: ${{ toJSON(needs) }}
+          slack-webhook-url: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK_URL }}
