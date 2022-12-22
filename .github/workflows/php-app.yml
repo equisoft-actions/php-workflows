@@ -192,9 +192,9 @@ jobs:
         run: |
           RUN_PHP_LONG_CHECKS="false"
           if [[ "${{ needs.pre-checks.outputs.should-skip-backend }}" != "true" ]]; then
-            if [[ "${{ inputs.php-checks-pr-only }}" != "true" ]]; then
+            if [[ "${{ inputs.php-quality-pr-only }}" != "true" ]]; then
               RUN_PHP_LONG_CHECKS="true"
-            elif [[ "${{ inputs.php-checks-pr-only }}" == "true" && "${{ github.event_name }}" == "pull_request" ]]; then
+            elif [[ "${{ inputs.php-quality-pr-only }}" == "true" && "${{ github.event_name }}" == "pull_request" ]]; then
               RUN_PHP_LONG_CHECKS="true"
             fi
           fi
