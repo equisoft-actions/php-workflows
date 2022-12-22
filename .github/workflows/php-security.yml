@@ -15,7 +15,7 @@ on:
         type: string
       php-version:
         description: 'Setup PHP version.'
-        default: '7.4'
+        default: '8.1'
         required: false
         type: string
       extensions:
