@@ -120,8 +120,8 @@ on:
         description: The AWS ECR registry where the image will be pushed to.
         required: true
       GPR_KEY:
-        description: Personal access token to fetch private repos
-        required: false
+        description: Personal access token to fetch private repos and Github Packages
+        required: true
       GPR_USER:
         description: A username with write access to Github Package registry.
         required: true
@@ -209,6 +209,12 @@ jobs:
 
       - name: Setup asdf-vm
         uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: NPM Login
+        uses: equisoft-actions/yarn-npm-login@v1
+        with:
+          registry: npm.pkg.github.com
+          token: ${{ secrets.GPR_KEY }}
 
       - name: Install NPM dependencies
         uses: equisoft-actions/yarn-install@v1
@@ -379,6 +385,12 @@ jobs:
       - name: Setup asdf-vm
         uses: equisoft-actions/with-asdf-vm@v1
 
+      - name: NPM Login
+        uses: equisoft-actions/yarn-npm-login@v1
+        with:
+          registry: npm.pkg.github.com
+          token: ${{ secrets.GPR_KEY }}
+
       - name: Install NPM dependencies
         uses: equisoft-actions/yarn-install@v1
 
@@ -397,6 +409,12 @@ jobs:
 
       - name: Setup asdf-vm
         uses: equisoft-actions/with-asdf-vm@v1
+
+      - name: NPM Login
+        uses: equisoft-actions/yarn-npm-login@v1
+        with:
+          registry: npm.pkg.github.com
+          token: ${{ secrets.GPR_KEY }}
 
       - name: Install NPM dependencies
         uses: equisoft-actions/yarn-install@v1
