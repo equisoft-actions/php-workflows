@@ -566,6 +566,8 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
     name: Build ${{ matrix.image }} image
+    outputs:
+      image-version: ${{ steps.build-and-push.outputs.image-version }}
     needs:
       - setup
       - phpunit
@@ -643,6 +645,21 @@ jobs:
           push: true
           is-release: ${{ needs.setup.outputs.is-release }}
           version: ${{ needs.setup.outputs.version }}
+
+  docker-security:
+    uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@v2
+    needs:
+      - image
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
+    with:
+      image-tag: ${{ matrix.image }}:${{ needs.image.outputs.image-version }}
+      working-directory: ${{ inputs.working-directory }}
+    secrets:
+      REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      ECR_AWS_ACCESS_KEY_ID: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
+      ECR_AWS_SECRET_ACCESS_KEY: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+      ECR_AWS_REGION: ${{ secrets.ECR_AWS_REGION }}
 
   openapi_yaml:
     name: Generate openapi.yaml
