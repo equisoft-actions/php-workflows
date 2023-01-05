@@ -667,6 +667,7 @@ jobs:
       matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
     uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@v2
     needs:
+      - setup
       - image
     with:
       image-tag: ${{ matrix.image }}:${{ needs.image.outputs.image-version }}
