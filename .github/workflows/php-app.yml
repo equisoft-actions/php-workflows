@@ -595,16 +595,12 @@ jobs:
       - build_frontend
     # Because psalm is skipped we have to define all success explicitly
     if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
       needs.setup.outputs.publishable == 'true' &&
       !failure() &&
-      !cancelled() &&
-      success('phpunit') &&
-      success('phpunit-it') &&
-      success('eslint') &&
-      success('mocha') &&
-      success('yaml_validate') &&
-      success('build_backend') &&
-      success('build_frontend')
+      !cancelled()
 
     runs-on: ubuntu-latest
 
