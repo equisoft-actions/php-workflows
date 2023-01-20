@@ -659,6 +659,10 @@ jobs:
           version: ${{ needs.setup.outputs.version }}
 
   docker-security:
+    if: |
+      success('image') &&
+      !failure() &&
+      !cancelled()
     strategy:
       matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
     uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@v2
