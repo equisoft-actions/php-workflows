@@ -101,7 +101,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : Psalm
-        uses : equisoft-actions/psalm@v1
+        uses : equisoft-actions/psalm@cd70db7fa39af8ef04b0f6499af613bae887902a
         with:
           working-directory: ${{ inputs.working-directory }}
           default-branch: master
