@@ -174,6 +174,7 @@ jobs:
       is-hotfix: ${{ steps.metadata.outputs.is-hotfix }}
       images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
       run-php-long-checks: ${{ steps.outputs.outputs.run-php-long-checks }}
+      run-phpunit-it: ${{ steps.outputs.outputs.run-php-unit }}
       with-asdf: ${{ steps.outputs.outputs.with-asdf }}
 
     steps:
@@ -193,6 +194,7 @@ jobs:
         run: |
           RUN_PHP_LONG_CHECKS="false"
           WITH_ASDF="false"
+          RUN_PHPUNIT_IT="false"
 
           if [[ "${{ needs.pre-checks.outputs.should-skip-backend }}" != "true" ]]; then
             if [[ "${{ inputs.php-quality-pr-only }}" != "true" ]]; then
@@ -206,7 +208,12 @@ jobs:
             WITH_ASDF="true"
           fi
 
+          if grep -Fq "<testsuite name=\"it\">" "${{ inputs.working-directory }}/phpunit.xml"; then
+            RUN_PHPUNIT_IT="true"
+          fi
+
           echo "run-php-long-checks=${RUN_PHP_LONG_CHECKS}" >> $GITHUB_OUTPUT
+          echo "run-phpunit-it=${RUN_PHPUNIT_IT}" >> $GITHUB_OUTPUT
           echo "with-asdf=${WITH_ASDF}" >> $GITHUB_OUTPUT
 
       - name: Find application metadata
@@ -252,7 +259,9 @@ jobs:
 
   phpunit:
     name: PHPUnit
-    needs: [setup]
+    needs:
+      - pre-checks
+      - setup
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') }}
     runs-on: ubuntu-latest
 
@@ -280,8 +289,9 @@ jobs:
 
   phpunit-it:
     name: PHPUnit IT
-    needs: [setup]
-    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') }}
+      - pre-checks
+      - setup
+    if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') && needs.setup.outputs.run-phpunit-it == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -387,6 +397,7 @@ jobs:
   eslint:
     name: ESLint
     needs:
+      - pre-checks
       - setup
     if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
     runs-on: ubuntu-latest
@@ -413,6 +424,7 @@ jobs:
   mocha:
     name: Mocha
     needs:
+      - pre-checks
       - setup
     if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
     runs-on: ubuntu-latest
@@ -438,7 +450,9 @@ jobs:
 
   yaml_validate:
     name: Yaml validation
-    needs: [setup]
+    needs:
+      - pre-checks
+      - setup
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && inputs.yaml-validate }}
     runs-on: ubuntu-latest
 
@@ -464,6 +478,7 @@ jobs:
   build_backend:
     name: Build backend
     needs:
+      - pre-checks
       - setup
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' }}
     runs-on: ubuntu-latest
@@ -532,6 +547,7 @@ jobs:
   build_frontend:
     name: Build frontend
     needs:
+      - pre-checks
       - setup
     if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
     runs-on: ubuntu-latest
@@ -680,7 +696,9 @@ jobs:
 
   openapi_yaml:
     name: Generate openapi.yaml
-    needs: [setup]
+    needs:
+      - pre-checks
+      - setup
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && inputs.openapi-paths != '' }}
     runs-on: ubuntu-latest
 
