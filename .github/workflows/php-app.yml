@@ -289,6 +289,7 @@ jobs:
 
   phpunit-it:
     name: PHPUnit IT
+    needs:
       - pre-checks
       - setup
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') && needs.setup.outputs.run-phpunit-it == 'true' }}
