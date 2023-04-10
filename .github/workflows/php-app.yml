@@ -5,7 +5,7 @@ on:
     inputs:
       checks:
         description: |
-          List of enabled check separated by comma.
+          List of enabled checks separated by comma.
           default: phpunit,phpcs,psalm
           available checks: phpunit,phpcs,psalm
         required: false
@@ -16,6 +16,19 @@ on:
         description: Set to false for backend-only projects.
         required: false
         type: boolean
+      frontend-build-path:
+        default: "public/"
+        description: Path where the frontend artifacts are written
+        required: false
+        type: string
+      frontend-checks:
+        default: lint,unit-tests
+        description: |
+          List of enabled checks separated by comma.
+          default: lint,unit-tests
+          available checks: lint,unit-tests
+        required: false
+        type: string
       images:
         description: 'Dockers images to build. Object where the key is the image name and the value the Dockerfile. e.g. "{"crm-worker": "Dockerfile-worker"}'
         required: true
@@ -400,7 +413,7 @@ jobs:
     needs:
       - pre-checks
       - setup
-    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' && contains(inputs.frontend-checks, 'lint') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -427,7 +440,7 @@ jobs:
     needs:
       - pre-checks
       - setup
-    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' }}
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' && contains(inputs.frontend-checks, 'unit-tests') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -585,7 +598,7 @@ jobs:
           NO_COMPRESS=${SKIP_COMPRESSION} yarn build:production
 
       - name: Tar build output
-        run: tar -cvf frontend-build-output.tar $(ls -d package.json public/ 2>/dev/null)
+        run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
         uses: actions/upload-artifact@v3
