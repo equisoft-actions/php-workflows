@@ -188,6 +188,7 @@ jobs:
       images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
       run-php-long-checks: ${{ steps.outputs.outputs.run-php-long-checks }}
       run-phpunit-it: ${{ steps.outputs.outputs.run-php-unit }}
+      run-stylelint: ${{ steps.outputs.outputs.run-stylelint }}
       with-asdf: ${{ steps.outputs.outputs.with-asdf }}
 
     steps:
@@ -206,8 +207,9 @@ jobs:
         id: outputs
         run: |
           RUN_PHP_LONG_CHECKS="false"
-          WITH_ASDF="false"
           RUN_PHPUNIT_IT="false"
+          RUN_STYLELINT="false"
+          WITH_ASDF="false"
 
           if [[ "${{ needs.pre-checks.outputs.should-skip-backend }}" != "true" ]]; then
             if [[ "${{ inputs.php-quality-pr-only }}" != "true" ]]; then
@@ -225,8 +227,13 @@ jobs:
             RUN_PHPUNIT_IT="true"
           fi
 
+          if grep -Fq "\"stylelint:ci\"" "${{ inputs.working-directory }}/package.json"; then
+            RUN_STYLELINT="true"
+          fi
+
           echo "run-php-long-checks=${RUN_PHP_LONG_CHECKS}" >> $GITHUB_OUTPUT
           echo "run-phpunit-it=${RUN_PHPUNIT_IT}" >> $GITHUB_OUTPUT
+          echo "run-stylelint=${RUN_STYLELINT}" >> $GITHUB_OUTPUT
           echo "with-asdf=${WITH_ASDF}" >> $GITHUB_OUTPUT
 
       - name: Find application metadata
@@ -435,6 +442,33 @@ jobs:
       - name: Run ESLint
         uses: equisoft-actions/yarn-eslint@v2
 
+  stylelint:
+    name: stylelint
+    needs:
+      - pre-checks
+      - setup
+    if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' && contains(inputs.frontend-checks, 'lint') && needs.setup.outputs.run-stylelint == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup asdf-vm
+        uses: equisoft-actions/with-asdf-vm@v1
+        if: ${{ needs.setup.outputs.with-asdf == 'true' }}
+
+      - name: NPM Login
+        uses: equisoft-actions/yarn-npm-login@v1
+        with:
+          registry: npm.pkg.github.com
+          token: ${{ secrets.GPR_KEY }}
+
+      - name: Install NPM dependencies
+        uses: equisoft-actions/yarn-install@v1
+
+      - name: Run stylelint
+        uses: equisoft-actions/yarn-stylelint@v1
+
   mocha:
     name: Mocha
     needs:
@@ -619,6 +653,7 @@ jobs:
       - phpunit
       - phpunit-it
       - eslint
+      - stylelint
       - mocha
       - yaml_validate
       - build_backend
@@ -836,6 +871,7 @@ jobs:
       - phpcs
       - generate_sdk
       - eslint
+      - stylelint
       - mocha
       - yaml_validate
       - build_backend
