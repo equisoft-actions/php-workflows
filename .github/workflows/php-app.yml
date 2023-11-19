@@ -825,7 +825,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Generate SDK
-        uses: equisoft-actions/generate-openapi-sdk@v1
+        uses: equisoft-actions/generate-openapi-sdk@v2
         with:
           working-directory: openapi
           generator-name: ${{ matrix.generator }}
