@@ -585,7 +585,7 @@ jobs:
         run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-build-output
           path: backend-build-output.tar
@@ -635,7 +635,7 @@ jobs:
         run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build-output
           path: frontend-build-output.tar
@@ -674,7 +674,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download backend build output
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-build-output
           path: .
@@ -684,7 +684,7 @@ jobs:
 
       - name: Download frontend build output
         if: inputs.frontend
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-build-output
           path: .
@@ -784,7 +784,7 @@ jobs:
             $arguments
 
       - name: Store openapi.yaml
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: openapi_yaml
           path: openapi/build/openapi.yaml
@@ -807,7 +807,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: openapi_yaml
           path: openapi/build
