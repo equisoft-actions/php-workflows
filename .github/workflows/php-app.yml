@@ -581,14 +581,17 @@ jobs:
         run: |
           ./script/tool API UpdateWsdl -v
 
-      - name: Tar build output
-        run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
+#      - name: Tar build output
+#        run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
 
       - name: Store build artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-build-output
-          path: backend-build-output.tar
+          path: |
+            composer.json
+            vendor/
+            apps/**/wsdl/*.xml
           retention-days: 1
           if-no-files-found: error
 
@@ -631,14 +634,16 @@ jobs:
           fi
           NO_COMPRESS=${SKIP_COMPRESSION} yarn build:production
 
-      - name: Tar build output
-        run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
+#      - name: Tar build output
+#        run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-output
-          path: frontend-build-output.tar
+          path: |
+            package.json
+            ${{ inputs.frontend-build-path }}
           retention-days: 1
           if-no-files-found: error
 
@@ -663,7 +668,7 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
+#      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
 
@@ -679,8 +684,8 @@ jobs:
           name: backend-build-output
           path: .
 
-      - name: Un-tar backend build output
-        run: tar -xvf backend-build-output.tar
+#      - name: Un-tar backend build output
+#        run: tar -xvf backend-build-output.tar
 
       - name: Download frontend build output
         if: inputs.frontend
@@ -689,9 +694,9 @@ jobs:
           name: frontend-build-output
           path: .
 
-      - name: Un-tar frontend build output
-        if: inputs.frontend
-        run: tar -xvf frontend-build-output.tar
+#      - name: Un-tar frontend build output
+#        if: inputs.frontend
+#        run: tar -xvf frontend-build-output.tar
 
       - name: Determine platforms to build
         id: platforms
@@ -719,7 +724,7 @@ jobs:
           name: ${{ matrix.image }}
           dockerfile: ${{ matrix.dockerfile }}
           platforms: ${{ steps.platforms.outputs.platforms }}
-          push: true
+          push: false
           is-release: ${{ needs.setup.outputs.is-release }}
           version: ${{ needs.setup.outputs.version }}
 
