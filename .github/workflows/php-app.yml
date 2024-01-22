@@ -581,9 +581,6 @@ jobs:
         run: |
           ./script/tool API UpdateWsdl -v
 
-#      - name: Tar build output
-#        run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
-
       - name: Store build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -634,9 +631,6 @@ jobs:
           fi
           NO_COMPRESS=${SKIP_COMPRESSION} yarn build:production
 
-#      - name: Tar build output
-#        run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
-
       - name: Store build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -668,7 +662,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-#      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
 
@@ -684,19 +677,12 @@ jobs:
           name: backend-build-output
           path: .
 
-#      - name: Un-tar backend build output
-#        run: tar -xvf backend-build-output.tar
-
       - name: Download frontend build output
         if: inputs.frontend
         uses: actions/download-artifact@v4
         with:
           name: frontend-build-output
           path: .
-
-#      - name: Un-tar frontend build output
-#        if: inputs.frontend
-#        run: tar -xvf frontend-build-output.tar
 
       - name: Determine platforms to build
         id: platforms
