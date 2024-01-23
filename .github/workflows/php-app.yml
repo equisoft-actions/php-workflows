@@ -730,7 +730,7 @@ jobs:
       !cancelled()
     strategy:
       matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
-    uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@v2
+    uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@5a97419ed771474025fd2dca58f9dc968bde9f8b
     needs:
       - setup
       - image
