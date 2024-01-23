@@ -718,7 +718,7 @@ jobs:
           name: ${{ matrix.image }}
           dockerfile: ${{ matrix.dockerfile }}
           platforms: ${{ steps.platforms.outputs.platforms }}
-          push: false
+          push: true
           is-release: ${{ needs.setup.outputs.is-release }}
           version: ${{ needs.setup.outputs.version }}
 
@@ -729,7 +729,7 @@ jobs:
       !cancelled()
     strategy:
       matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
-    uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@7678d97eb9bea152d6382647df3ce74423bd477f
+    uses: equisoft-actions/docker-workflows/.github/workflows/security.yml@7372f9fbc427f2939e3feef252b731cc1e424add
     needs:
       - setup
       - image
