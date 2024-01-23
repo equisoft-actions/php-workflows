@@ -663,7 +663,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
 
@@ -719,7 +718,7 @@ jobs:
           name: ${{ matrix.image }}
           dockerfile: ${{ matrix.dockerfile }}
           platforms: ${{ steps.platforms.outputs.platforms }}
-          push: true
+          push: false
           is-release: ${{ needs.setup.outputs.is-release }}
           version: ${{ needs.setup.outputs.version }}
 
