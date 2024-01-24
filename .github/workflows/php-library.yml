@@ -74,6 +74,8 @@ jobs:
       - name: PHPUnit
         uses: equisoft-actions/phpunit@v1
         with:
+          report-name: phpunit.php-${{ inputs.php-version }}.junit.xml
+          coverage-report-name: phpunit.php-${{ inputs.php-version }}clover.xml
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
           extra-args: ${{ inputs.phpunit-extra-args }}
@@ -133,6 +135,7 @@ jobs:
       - name : PHP_Codesniffer
         uses : equisoft-actions/phpcs@v1
         with:
+          report-name: phpcs.php-${{ inputs.php-version }}.junit.xml
           default-branch: master
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
