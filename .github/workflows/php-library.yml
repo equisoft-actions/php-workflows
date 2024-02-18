@@ -103,7 +103,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : Psalm
-        uses : equisoft-actions/psalm@v1
+        uses : equisoft-actions/psalm@v2
         with:
           working-directory: ${{ inputs.working-directory }}
           default-branch: master
@@ -133,7 +133,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : PHP_Codesniffer
-        uses : equisoft-actions/phpcs@v1
+        uses : equisoft-actions/phpcs@v2
         with:
           report-name: phpcs.php-${{ inputs.php-version }}.junit.xml
           default-branch: master
