@@ -3,6 +3,10 @@ name: PHP Security
 on:
   workflow_call:
     inputs:
+      memory-limit:
+        description: Memory limit for psalm analysis
+        required: false
+        type: string
       report-retention-days:
         description: "Duration in days to preserve reports."
         required: false
@@ -62,8 +66,9 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Taint analysis
-        uses: equisoft-actions/psalm-taint-analysis@v2
+        uses: equisoft-actions/psalm-taint-analysis@21bd62d74b1eff1d3bc41b9f26a539bd869d8bd2
         with:
+          memory-limit: ${{ inputs.memory-limit }}
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
 
