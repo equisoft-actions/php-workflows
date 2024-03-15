@@ -36,6 +36,11 @@ on:
         default: true
         required: false
         type: boolean
+      psalm-runs-on:
+        description: 'Configure runner for psalm-taint-analysis'
+        default: 'ubuntu-latest'
+        required: false
+        type: string
     secrets:
       GPR_KEY:
         description: Personal access token to fetch private repos
@@ -47,7 +52,7 @@ env:
 jobs:
   psalm-taint-analysis:
     name: psalm taint analysis
-    runs-on: ubuntu-latest-m
+    runs-on: ${{ inputs.psalm-runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
