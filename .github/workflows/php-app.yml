@@ -297,7 +297,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
@@ -329,7 +329,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
@@ -370,7 +370,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
@@ -411,7 +411,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
@@ -524,7 +524,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
@@ -567,7 +567,7 @@ jobs:
           contents="$(jq ".version = \"${APP_VERSION}\"" ./composer.json)" && echo "${contents}" > ./composer.json
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           production: "true"
           gpr-key: ${{ secrets.GPR_KEY }}
@@ -774,7 +774,7 @@ jobs:
           cache-key: ${{ env.php-cache-key }}
 
       - name: Composer install
-        uses: equisoft-actions/composer@v1
+        uses: equisoft-actions/composer@b90bcbd20e45125cc2aad8b4e1ca4773195926b8
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
           working-directory: ${{ inputs.working-directory }}
