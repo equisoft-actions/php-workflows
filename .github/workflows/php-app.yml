@@ -300,11 +300,13 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: PHPUnit
         uses: equisoft-actions/phpunit@v1
         with:
           extra-args: ${{ inputs.phpunit-extra-args }}
+          working-directory: ${{ inputs.working-directory }}
 
 
   phpunit-it:
@@ -330,6 +332,7 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: PHPUnit
         uses: equisoft-actions/phpunit@v1
@@ -337,6 +340,7 @@ jobs:
           report-name: phpunit-it.junit.xml
           coverage-report-name: phpunit-it.clover.xml
           extra-args: --testsuite it ${{ inputs.phpunit-extra-args }}
+          working-directory: ${{ inputs.working-directory }}
 
   psalm:
     name: Psalm
@@ -369,6 +373,7 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Psalm
         uses: equisoft-actions/psalm@v2
@@ -376,6 +381,7 @@ jobs:
           default-branch: ${{ github.event.repository.default_branch }}
           extra-args: ${{ inputs.psalm-extra-args }}
           only-changed-files: ${{ inputs.psalm-diff-only }}
+          working-directory: ${{ inputs.working-directory }}
 
   phpcs:
     name: PHP_Codesniffer
@@ -408,12 +414,14 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: PHP_Codesniffer
         uses: equisoft-actions/phpcs@v2
         with:
           only-changed-files: ${{ inputs.phpcs-diff-only }}
           default-branch: ${{ github.event.repository.default_branch }}
+          working-directory: ${{ inputs.working-directory }}
 
   eslint:
     name: ESLint
@@ -519,6 +527,7 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Yaml validation
         run: php ./internals/scripts/YamlLint.php
@@ -562,6 +571,7 @@ jobs:
         with:
           production: "true"
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Site Config
         if: inputs.site-config-path != ''
@@ -722,6 +732,7 @@ jobs:
           push: true
           is-release: ${{ needs.setup.outputs.is-release }}
           version: ${{ needs.setup.outputs.version }}
+          working-directory: ${{ inputs.working-directory }}
 
   docker-security:
     if: |
@@ -766,6 +777,7 @@ jobs:
         uses: equisoft-actions/composer@v1
         with:
           gpr-key: ${{ secrets.GPR_KEY }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Generate openapi.yaml
         id: generate
