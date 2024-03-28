@@ -594,10 +594,12 @@ jobs:
           ./script/tool API UpdateWsdl -v
 
       - name: Tar build output
+        working-directory: ${{ inputs.working-directory }}
         run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
 
       - name: Store build artifact
         uses: actions/upload-artifact@v4
+        working-directory: ${{ inputs.working-directory }}
         with:
           name: backend-build-output
           path: backend-build-output.tar
