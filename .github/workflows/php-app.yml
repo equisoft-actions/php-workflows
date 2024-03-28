@@ -651,7 +651,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-output
-          path: frontend-build-output.tar
+          path: ${{ inputs.working-directory }}/frontend-build-output.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -689,7 +689,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-build-output
-          path: .
+          path: ${{ inputs.working-directory }}
 
       - name: Un-tar backend build output
         run: tar -xvf backend-build-output.tar
@@ -699,7 +699,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build-output
-          path: .
+          path: ${{ inputs.working-directory }}
 
       - name: Un-tar frontend build output
         if: inputs.frontend
