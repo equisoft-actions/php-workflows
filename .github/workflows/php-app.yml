@@ -676,7 +676,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
 
