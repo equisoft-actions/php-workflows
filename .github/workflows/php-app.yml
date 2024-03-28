@@ -605,7 +605,6 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-
   build_frontend:
     name: Build frontend
     needs:
