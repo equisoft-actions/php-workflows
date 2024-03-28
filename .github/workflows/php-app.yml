@@ -530,7 +530,8 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Yaml validation
-        run: php ${{ inputs.working-directory }}/internals/scripts/YamlLint.php
+        working-directory: ${{ inputs.working-directory }}
+        run: php ./internals/scripts/YamlLint.php
 
   build_backend:
     name: Build backend
