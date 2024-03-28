@@ -578,6 +578,7 @@ jobs:
       - name: Site Config
         if: inputs.site-config-path != ''
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: |
           sudo mkdir -p $(dirname ${{ inputs.site-config-path }})
           sudo cat <<EOF > /tmp/configs.yml
@@ -590,6 +591,7 @@ jobs:
       - name: Generate WSDL Files
         if: inputs.update-wsdl
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: |
           ./script/tool API UpdateWsdl -v
 
@@ -680,7 +682,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
 
@@ -694,9 +695,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-build-output
-          path: .
+          path: ${{ inputs.working-directory }}
 
       - name: Un-tar backend build output
+        working-directory: ${{ inputs.working-directory }}
         run: tar -xvf backend-build-output.tar
 
       - name: Download frontend build output
@@ -704,10 +706,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build-output
-          path: .
+          path: ${{ inputs.working-directory }}
 
       - name: Un-tar frontend build output
         if: inputs.frontend
+        working-directory: ${{ inputs.working-directory }}
         run: tar -xvf frontend-build-output.tar
 
       - name: Determine platforms to build
