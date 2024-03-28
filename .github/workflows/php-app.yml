@@ -623,6 +623,7 @@ jobs:
       - name: Update package version
         env:
           VERSION: ${{ needs.setup.outputs.version }}
+        working-directory: ${{ inputs.working-directory }}
         run: |
           contents="$(jq ".version = \"${VERSION}\"" ./package.json)" && echo "${contents}" > ./package.json
 
@@ -634,9 +635,11 @@ jobs:
 
       - name: Install NPM dependencies
         uses: equisoft-actions/yarn-install@v1
+        with:
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Webpack
-        working-directory: .
+        working-directory: ${{ inputs.working-directory }}
         run: |
           SKIP_COMPRESSION=true
           if [[ "${{ needs.setup.outputs.publishable }}" == "true" ]]; then
@@ -645,13 +648,14 @@ jobs:
           NO_COMPRESS=${SKIP_COMPRESSION} yarn build:production
 
       - name: Tar build output
+        working-directory: ${{ inputs.working-directory }}
         run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-output
-          path: frontend-build-output.tar
+          path: ${{ inputs.working-directory }}/frontend-build-output.tar
           retention-days: 1
           if-no-files-found: error
 
