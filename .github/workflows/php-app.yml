@@ -477,8 +477,8 @@ jobs:
       - name: Run stylelint
         uses: equisoft-actions/yarn-stylelint@v1
 
-  mocha:
-    name: Mocha
+  js-tests:
+    name: JS unit tests
     needs:
       - pre-checks
       - setup
@@ -492,6 +492,12 @@ jobs:
         uses: equisoft-actions/with-asdf-vm@v2
         if: ${{ needs.setup.outputs.with-asdf == 'true' }}
 
+      - name: Detect test runner
+        id: test-runner
+        shell: bash
+        run:
+          echo "use-jest=$(jq -e '.devDependencies | has("jest")' package.json)" >> $GITHUB_OUTPUT
+
       - name: NPM Login
         uses: equisoft-actions/yarn-npm-login@v1
         with:
@@ -502,7 +508,12 @@ jobs:
         uses: equisoft-actions/yarn-install@v1
 
       - name: Run Mocha
+        if: ${{ steps.test-runner.outputs.use-jest == 'false' }}
         uses: equisoft-actions/yarn-mocha@v1
+
+      - name: Run Jest
+        if: ${{ steps.test-runner.outputs.use-jest == 'true' }}
+        uses: equisoft-actions/yarn-jest@v1
 
   yaml_validate:
     name: Yaml validation
@@ -673,7 +684,7 @@ jobs:
       - phpunit-it
       - eslint
       - stylelint
-      - mocha
+      - js-tests
       - yaml_validate
       - build_backend
       - build_frontend
@@ -895,7 +906,7 @@ jobs:
       - generate_sdk
       - eslint
       - stylelint
-      - mocha
+      - js-tests
       - yaml_validate
       - build_backend
       - build_frontend
