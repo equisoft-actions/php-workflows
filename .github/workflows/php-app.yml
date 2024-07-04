@@ -104,6 +104,12 @@ on:
         description: 'Array of paths to skip for the frontend'
         required: false
         type: string
+      slack-channel:
+        description: |
+          The Slack channel where the notification will be sent.
+          Defaults to $ {{ github.event.repository.custom_properties.ci_slack_channel }}.
+        required: false
+        type: string
       update-wsdl:
         default: false
         description: 'If true, runs UpdateWSDL tool.'
@@ -144,8 +150,8 @@ on:
       SENTRY_ORG:
         description: 'Sentry organization'
         required: false
-      SLACK_NOTIFICATION_WEBHOOK_URL:
-        description: A Slack webhook where workflow failures will be published to.
+      SLACK_BOT_TOKEN:
+        description: The bot token used to authenticate with Slack.
         required: true
 
 env:
@@ -899,23 +905,29 @@ jobs:
     name: Notify
     runs-on: ubuntu-latest
     needs:
-      - psalm
-      - phpunit
-      - phpunit-it
-      - phpcs
-      - generate_sdk
-      - eslint
-      - stylelint
-      - js-tests
-      - yaml_validate
-      - build_backend
-      - build_frontend
-      - image
-      - createSentryRelease
-    if: failure() && github.event_name == 'push'
+     - pre-checks
+     - setup
+     - phpunit
+     - phpunit-it
+     - psalm
+     - phpcs
+     - eslint
+     - stylelint
+     - js-tests
+     - yaml_validate
+     - build_backend
+     - build_frontend
+     - image
+     - docker-security
+     - openapi_yaml
+     - generate_sdk
+     - createSentryRelease
+    if: always() && github.event_name == 'push'
     steps:
       - name: Post workflow status
-        uses: equisoft-actions/notify-workflow-status@v1
+        uses: equisoft-actions/notify-workflow-status@v2
         with:
           needs: ${{ toJSON(needs) }}
-          slack-webhook-url: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK_URL }}
+          downgrade-to-warning: docker-security,generate_sdk
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-channel: ${{ inputs.slack-channel || github.event.repository.custom_properties.ci_slack_channel }}

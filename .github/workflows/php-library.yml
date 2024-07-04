@@ -40,10 +40,19 @@ on:
         default: '--no-cache --no-diff'
         required: false
         type: string
+      slack-channel:
+        description: |
+          The Slack channel where the notification will be sent.
+          Defaults to $ {{ github.event.repository.custom_properties.ci_slack_channel }}.
+        required: false
+        type: string
     secrets:
       GPR_KEY:
         description: Personal access token to fetch private repos
         required: false
+      SLACK_BOT_TOKEN:
+        description: The bot token used to authenticate with Slack.
+        required: true
 
 env:
   php-cache-key: v1
@@ -171,14 +180,15 @@ jobs:
     name: Notify
     runs-on: ubuntu-latest
     needs:
-      - psalm
       - phpunit
+      - psalm
       - phpcs
       - qodana
-    if: failure() && github.event_name == 'push'
+    if: always() && github.event_name == 'push'
     steps:
       - name: Post workflow status
-        uses: equisoft-actions/notify-workflow-status@v1
+        uses: equisoft-actions/notify-workflow-status@v2
         with:
           needs: ${{ toJSON(needs) }}
-          slack-webhook-url: ${{ secrets.OPS_CI_WEBHOOK_URL }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-channel: ${{ inputs.slack-channel || github.event.repository.custom_properties.ci_slack_channel }}
