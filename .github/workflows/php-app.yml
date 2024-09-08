@@ -519,7 +519,7 @@ jobs:
 
       - name: Run Jest
         if: ${{ steps.test-runner.outputs.use-jest == 'true' }}
-        uses: equisoft-actions/yarn-jest@v1
+        uses: equisoft-actions/yarn-jest@v2
 
   yaml_validate:
     name: Yaml validation
