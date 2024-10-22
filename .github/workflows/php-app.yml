@@ -77,7 +77,7 @@ on:
         type: string
       sdks:
         description: 'List of sdks to build'
-        default: '["php", "typescript", "micronaut", "kotlin"]'
+        default: '["php", "typescript", "micronaut"]'
         required: false
         type: string
       sentry-project:
