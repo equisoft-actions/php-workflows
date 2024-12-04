@@ -81,7 +81,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: PHPUnit
-        uses: equisoft-actions/phpunit@v1
+        uses: equisoft-actions/phpunit@fix-working-directory
         with:
           report-name: phpunit.php-${{ inputs.php-version }}.junit.xml
           coverage-report-name: phpunit.php-${{ inputs.php-version }}clover.xml
@@ -142,7 +142,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name : PHP_Codesniffer
-        uses : equisoft-actions/phpcs@v2
+        uses : equisoft-actions/phpcs@fix-working-directory
         with:
           report-name: phpcs.php-${{ inputs.php-version }}.junit.xml
           default-branch: master
