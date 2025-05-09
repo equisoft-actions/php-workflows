@@ -764,7 +764,7 @@ jobs:
 
   docker-security:
     if: |
-      success('image') &&
+      needs.image.result == 'success' &&
       !failure() &&
       !cancelled()
     strategy:
