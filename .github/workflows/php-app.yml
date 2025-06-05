@@ -900,6 +900,7 @@ jobs:
           version: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
           version_prefix: ''
           set_commits: auto
+          inject: false
 
   notify:
     name: Notify
