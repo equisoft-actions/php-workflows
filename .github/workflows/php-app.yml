@@ -901,33 +901,34 @@ jobs:
           version_prefix: ''
           set_commits: auto
 
-  notify:
-    name: Notify
+  workflow-status:
+    name: Workflow status
     runs-on: ubuntu-latest
     needs:
-     - pre-checks
-     - setup
-     - phpunit
-     - phpunit-it
-     - psalm
-     - phpcs
-     - eslint
-     - stylelint
-     - js-tests
-     - yaml_validate
-     - build_backend
-     - build_frontend
-     - image
-     - docker-security
-     - openapi_yaml
-     - generate_sdk
-     - createSentryRelease
-    if: always() && github.event_name == 'push'
+      - pre-checks
+      - setup
+      - phpunit
+      - phpunit-it
+      - psalm
+      - phpcs
+      - eslint
+      - stylelint
+      - js-tests
+      - yaml_validate
+      - build_backend
+      - build_frontend
+      - image
+      - docker-security
+      - openapi_yaml
+      - generate_sdk
+      - createSentryRelease
+    if: always()
     steps:
       - name: Post workflow status
         uses: equisoft-actions/notify-workflow-status@v2
         with:
           needs: ${{ toJSON(needs) }}
+          slack-enabled: ${{ github.event_name == 'push' }}
           downgrade-to-warning: docker-security,generate_sdk
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ inputs.slack-channel || github.event.repository.custom_properties.ci_slack_channel }}

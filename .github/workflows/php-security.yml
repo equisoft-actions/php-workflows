@@ -41,6 +41,12 @@ on:
         default: 'ubuntu-latest'
         required: false
         type: string
+      slack-channel:
+        description: |
+          The Slack channel where the notification will be sent.
+          Defaults to $ {{ github.event.repository.custom_properties.ci_slack_channel }}.
+        required: false
+        type: string
     secrets:
       GPR_KEY:
         description: Personal access token to fetch private repos
@@ -104,3 +110,19 @@ jobs:
           publish: ${{ inputs.publish-reports }}
           report-retention-days: ${{ inputs.report-retention-days }}
           working-directory: ${{ inputs.working-directory }}
+
+  workflow-status:
+    name: Workflow status
+    runs-on: ubuntu-latest
+    needs:
+      - psalm-taint-analysis
+      - sbom
+    if: always()
+    steps:
+      - name: Post workflow status
+        uses: equisoft-actions/notify-workflow-status@v2
+        with:
+          needs: ${{ toJSON(needs) }}
+          slack-enabled: ${{ github.event_name == 'push' }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-channel: ${{ inputs.slack-channel || github.event.repository.custom_properties.ci_slack_channel }}
