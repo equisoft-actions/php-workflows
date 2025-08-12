@@ -896,7 +896,7 @@ jobs:
       role-to-assume: ${{ inputs.role-to-assume }}
       role-session-name: "php-docker-security-${{ github.run_id }}"
     secrets:
-      REGISTRY: ${{ inputs.registry}}
+      REGISTRY: ${{ inputs.registry }}
       ECR_AWS_REGION: ${{ secrets.ECR_AWS_REGION }}
 
   openapi_yaml:
