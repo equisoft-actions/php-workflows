@@ -115,7 +115,7 @@ jobs:
         uses : equisoft-actions/psalm@v2
         with:
           working-directory: ${{ inputs.working-directory }}
-          default-branch: master
+          default-branch: ${{ github.event.repository.default_branch }}
           extra-args: ${{ inputs.psalm-extra-args }}
           php-version: ${{ inputs.php-version }}
 
@@ -145,7 +145,7 @@ jobs:
         uses : equisoft-actions/phpcs@v2
         with:
           report-name: phpcs.php-${{ inputs.php-version }}.junit.xml
-          default-branch: master
+          default-branch: ${{ github.event.repository.default_branch }}
           working-directory: ${{ inputs.working-directory }}
           report-retention-days: ${{ inputs.report-retention-days }}
 
