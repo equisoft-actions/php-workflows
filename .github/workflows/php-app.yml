@@ -204,7 +204,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       is-release: ${{ steps.metadata.outputs.is-release }}
-      publishable: ${{ steps.metadata.outputs.publishable }}
+      # publishable: ${{ steps.metadata.outputs.publishable }}
+      publishable: ${{ steps.outputs.outputs.publishable }}
       version: ${{ steps.metadata.outputs.version }}
       is-hotfix: ${{ steps.metadata.outputs.is-hotfix }}
       images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
@@ -228,6 +229,9 @@ jobs:
         shell: bash
         id: outputs
         run: |
+          # for testing only
+          echo "publishable=true" >> $GITHUB_OUTPUT
+
           RUN_PHP_LONG_CHECKS="false"
           RUN_PHPUNIT_IT="false"
           RUN_STYLELINT="false"
