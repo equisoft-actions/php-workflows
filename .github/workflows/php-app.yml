@@ -33,6 +33,11 @@ on:
         description: 'Dockers images to build. Object where the key is the image name and the value the Dockerfile. e.g. "{"crm-worker": "Dockerfile-worker"}'
         required: true
         type: string
+      instance-size:
+        description: 'Runner instance size'
+        required: false
+        type: string
+        default: 'large'
       openapi-bootstrap:
         description: 'Path to pass as --bootstrap argument to the openapi generator'
         required: false
@@ -75,6 +80,14 @@ on:
         default: '--no-cache --no-diff'
         required: false
         type: string
+      registry:
+        description: The registry where the image will be pushed to
+        type: string
+        required: true
+      role-to-assume:
+        description: "The role to assume when publishing to ECR."
+        required: true
+        type: string
       sdks:
         description: 'List of sdks to build'
         default: '["php", "typescript", "micronaut"]'
@@ -115,6 +128,11 @@ on:
         description: 'If true, runs UpdateWSDL tool.'
         required: false
         type: boolean
+      use-self-hosted:
+        description: "Use self-hosted runners for the workflow."
+        required: false
+        type: boolean
+        default: false
       working-directory:
         description: "Workflow working directory"
         default: '.'
@@ -126,17 +144,8 @@ on:
         required: false
         type: boolean
     secrets:
-      ECR_AWS_ACCESS_KEY_ID:
-        description: An AWS access key ID that has write permissions to the registry.
-        required: true
       ECR_AWS_REGION:
         description: AWS region for the registry.
-        required: true
-      ECR_AWS_SECRET_ACCESS_KEY:
-        description: An AWS secret access key that has write permissions to the registry.
-        required: true
-      ECR_REGISTRY:
-        description: The AWS ECR registry where the image will be pushed to.
         required: true
       GPR_KEY:
         description: Personal access token to fetch private repos and Github Packages
@@ -156,6 +165,13 @@ on:
 
 env:
   php-cache-key: v1
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  security-events: write
+  pull-requests: write
 
 jobs:
   pre-checks:
@@ -313,7 +329,6 @@ jobs:
         with:
           extra-args: ${{ inputs.phpunit-extra-args }}
           working-directory: ${{ inputs.working-directory }}
-
 
   phpunit-it:
     name: PHPUnit IT
@@ -678,14 +693,79 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  image:
-    strategy:
-      matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
-    name: Build ${{ matrix.image }} image
-    outputs:
-      image-version: ${{ steps.build-and-push.outputs.image-version }}
+  prepare_docker_runners:
+    name: Prepare Docker Runners
+    runs-on: ubuntu-latest
+    # Because psalm is skipped we have to define all success explicitly
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      needs.setup.outputs.publishable == 'true' &&
+      !failure() &&
+      !cancelled()
     needs:
       - setup
+    outputs:
+      matrix-include: ${{ steps.combine.outputs.matrix }}
+      runner-config: ${{ steps.runners.outputs.runner-config }}
+    steps:
+      - name: Determine platforms to build
+        id: platforms
+        shell: bash
+        run: |
+          if [[ "${{ needs.setup.outputs.is-release }}" == "true" ]]; then
+            PLATFORMS="linux/amd64"
+          else
+            PLATFORMS="linux/amd64,linux/arm64"
+          fi
+          echo "platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
+
+      - name: Prepare image data
+        id: runners
+        uses: equisoft-actions/docker-runners@v1
+        with:
+          instance-size: ${{ inputs.instance-size }}
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          use-self-hosted: ${{ inputs.use-self-hosted }}
+
+      - name: Combine matrix
+        id: combine
+        shell: python
+        env:
+          IMAGES: ${{ needs.setup.outputs.images-matrix }}
+          PLATFORMS: ${{ steps.runners.outputs.matrix-include }}
+        run: |
+          import json
+          import os
+
+          images: dict = json.loads(os.environ.get("IMAGES"))
+          platforms: list = json.loads(os.environ.get("PLATFORMS"))
+          matrix: list = []
+          for image_name in images.get('include'):
+            for platform in platforms:
+              entry = {
+                "image": image_name.get("image"),
+                "dockerfile": image_name.get("dockerfile"),
+                "platform": platform.get("platform"),
+                "arch" : platform.get("arch")
+              }
+              matrix.append(entry)
+
+          with open(os.environ.get('GITHUB_OUTPUT'), 'a') as output_file:
+            output_file.write('matrix=')
+            json.dump(matrix, output_file)
+            output_file.write('\n')
+
+  image:
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.prepare_docker_runners.outputs.matrix-include) }}
+    name: Build ${{ matrix.image }}/${{ matrix.platform }} image
+    runs-on: ${{ fromJSON(format(needs.prepare_docker_runners.outputs.runner-config, matrix.arch)) }}
+    needs:
+      - setup
+      - prepare_docker_runners
       - phpunit
       - phpunit-it
       - eslint
@@ -702,9 +782,6 @@ jobs:
       needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
-
-    runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -731,40 +808,79 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: tar -xvf frontend-build-output.tar
 
-      - name: Determine platforms to build
-        id: platforms
-        shell: bash
-        run: |
-          if [[ "${{ needs.setup.outputs.is-release }}" == "true" ]]; then
-            PLATFORMS="linux/amd64"
-          else
-            PLATFORMS="linux/amd64,linux/arm64"
-          fi
-          echo "platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
+      - name: Prepare image data
+        id: metadata
+        uses: equisoft-actions/docker-metadata@v1
+        with:
+          title: ${{ matrix.image }}
+          image-name: ${{ inputs.registry }}/${{ matrix.image }}
+          release: ${{ needs.setup.outputs.is-release }}
+          version: ${{ needs.setup.outputs.version }}
 
       - name: Build and push
         id: build-and-push
-        uses: equisoft-actions/docker-build-and-push@v2
+        uses: equisoft-actions/docker-build-and-push@v3
         with:
-          registry: ${{ secrets.ECR_REGISTRY }}
-          aws-access-key-id: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
           aws-region: ${{ secrets.ECR_AWS_REGION }}
           build-args: |
             APPLICATION_VERSION=${{ needs.setup.outputs.version }}
             GPR_USER=${{ secrets.GPR_USER }}
             GPR_KEY=${{ secrets.GPR_KEY }}
-          name: ${{ matrix.image }}
           dockerfile: ${{ matrix.dockerfile }}
-          platforms: ${{ steps.platforms.outputs.platforms }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          name: ${{ matrix.image }}
+          platforms: ${{ matrix.platform }}
           push: true
-          is-release: ${{ needs.setup.outputs.is-release }}
-          version: ${{ needs.setup.outputs.version }}
+          push-manifest: "false"
+          registry: ${{ inputs.registry }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          tags: ${{ steps.metadata.outputs.tags }}
           working-directory: ${{ inputs.working-directory }}
+
+  create-manifest:
+    name: Create manifest for ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.images-matrix) }}
+    needs:
+      - setup
+      - prepare_docker_runners
+      - image
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      needs.setup.outputs.publishable == 'true' &&
+      !failure() &&
+      !cancelled()
+    outputs:
+      image-id: ${{ steps.create.outputs.image-id }}
+      image-version: ${{ steps.create.outputs.image-version }}
+    steps:
+      - name: Prepare image data
+        id: metadata
+        uses: equisoft-actions/docker-metadata@v1
+        with:
+          title: ${{ matrix.image }}
+          image-name: ${{ inputs.registry }}/${{ matrix.image }}
+          release: ${{ needs.setup.outputs.is-release }}
+          version: ${{ needs.setup.outputs.version }}
+
+      - name: Create manifest
+        id: create
+        uses: equisoft-actions/create-manifest@v1
+        with:
+          registry: ${{ inputs.registry }}
+          name: ${{ matrix.image }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          aws-region: ${{ secrets.ECR_AWS_REGION }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: ${{ github.run_id }}
 
   docker-security:
     if: |
-      needs.image.result == 'success' &&
+      needs.create-manifest.result == 'success' &&
       !failure() &&
       !cancelled()
     strategy:
@@ -773,13 +889,14 @@ jobs:
     needs:
       - setup
       - image
+      - create-manifest
     with:
-      image-tag: ${{ matrix.image }}:${{ needs.image.outputs.image-version }}
+      image-tag: ${{ matrix.image }}:${{ needs.create-manifest.outputs.image-version }}
       working-directory: ${{ inputs.working-directory }}
+      role-to-assume: ${{ inputs.role-to-assume }}
+      role-session-name: "php-docker-security-${{ github.run_id }}"
     secrets:
-      REGISTRY: ${{ secrets.ECR_REGISTRY }}
-      ECR_AWS_ACCESS_KEY_ID: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
-      ECR_AWS_SECRET_ACCESS_KEY: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+      REGISTRY: ${{ inputs.registry }}
       ECR_AWS_REGION: ${{ secrets.ECR_AWS_REGION }}
 
   openapi_yaml:
