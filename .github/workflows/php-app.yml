@@ -179,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should-skip-backend: ${{ steps.skip-check-backend.outputs.should_skip }}
-      should-skip-frontend: ${{ steps.skip-check-frontend.outputs.should_skip }}
+      should-skip-frontend: false
     steps:
       - id: skip-check-backend
         uses: fkirc/skip-duplicate-actions@v5
