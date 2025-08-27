@@ -204,7 +204,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       is-release: ${{ steps.metadata.outputs.is-release }}
-      publishable: ${{ steps.metadata.outputs.publishable }}
+      publishable: 'true'
       version: ${{ steps.metadata.outputs.version }}
       is-hotfix: ${{ steps.metadata.outputs.is-hotfix }}
       images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
