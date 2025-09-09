@@ -304,6 +304,9 @@ jobs:
     needs:
       - pre-checks
       - setup
+    permissions:
+      contents: read
+      checks: write
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') }}
     runs-on: ubuntu-latest
 
@@ -335,6 +338,9 @@ jobs:
     needs:
       - pre-checks
       - setup
+    permissions:
+      contents: read
+      checks: write
     if: ${{ needs.pre-checks.outputs.should-skip-backend != 'true' && contains(inputs.checks, 'phpunit') && needs.setup.outputs.run-phpunit-it == 'true' }}
     runs-on: ubuntu-latest
 
@@ -407,6 +413,9 @@ jobs:
   phpcs:
     name: PHP_Codesniffer
     needs: [setup]
+    permissions:
+      contents: read
+      checks: write
     if: ${{ needs.setup.outputs.run-php-long-checks == 'true' && contains(inputs.checks, 'phpcs') }}
     runs-on: ubuntu-latest
 
@@ -503,6 +512,9 @@ jobs:
     needs:
       - pre-checks
       - setup
+    permissions:
+      contents: read
+      checks: write
     if: ${{ inputs.frontend && needs.pre-checks.outputs.should-skip-frontend != 'true' && contains(inputs.frontend-checks, 'unit-tests') }}
     runs-on: ubuntu-latest
     steps:
