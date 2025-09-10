@@ -897,8 +897,8 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ inputs.sentry-project }}
         with:
-          version: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
-          version_prefix: ''
+          release: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
+          release_prefix: ''
           set_commits: auto
           inject: false
 
