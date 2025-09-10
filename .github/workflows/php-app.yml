@@ -1021,15 +1021,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Create Sentry release
-        uses: getsentry/action-release@v1
+        uses: getsentry/action-release@v3
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ inputs.sentry-project }}
         with:
-          version: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
-          version_prefix: ''
+          release: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
+          release_prefix: ''
           set_commits: auto
+          inject: false
 
   workflow-status:
     name: Workflow status
