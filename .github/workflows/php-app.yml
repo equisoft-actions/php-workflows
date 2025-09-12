@@ -97,6 +97,21 @@ on:
         description: 'Sentry project name'
         required: false
         type: string
+      sentry-sourcemaps-path:
+        description: 'Path where the sourcemaps are located'
+        default: ''
+        required: false
+        type: string
+      sentry-sourcemaps-url-prefix:
+        description: 'Prefix to add to the sourcemaps'
+        default: ''
+        required: false
+        type: string
+      sentry-sourcemaps-inject-debug-id:
+        description: 'Injects the debug id in the built files and sourcemaps'
+        default: false
+        required: false
+        type: boolean
       site-config-path:
         description: 'Path of the dev/docker siteconfig to generate. None if empty.'
         default: ''
@@ -1020,6 +1035,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Download frontend build output
+        uses: actions/download-artifact@v5
+        with:
+          name: frontend-build-output
+          path: ${{ inputs.working-directory }}
+      - name: Un-tar frontend build output
+        working-directory: ${{ inputs.working-directory }}
+        run: tar -xvf frontend-build-output.tar
       - name: Create Sentry release
         uses: getsentry/action-release@v3
         env:
@@ -1030,7 +1053,9 @@ jobs:
           release: ${{ inputs.sentry-project }}@${{ needs.setup.outputs.version }}
           release_prefix: ''
           set_commits: auto
-          inject: false
+          inject: ${{ inputs.sentry-sourcemaps-inject-debug-id }}
+          url_prefix: ${{ inputs.sentry-sourcemaps-url-prefix }}
+          sourcemaps: ${{ inputs.sentry-sourcemaps-path }}
 
   workflow-status:
     name: Workflow status
