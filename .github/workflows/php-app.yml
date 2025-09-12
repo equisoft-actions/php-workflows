@@ -109,7 +109,7 @@ on:
         type: string
       sentry-sourcemaps-inject-debug-id:
         description: 'Injects the debug id in the built files and sourcemaps'
-        default: true
+        default: false
         required: false
         type: boolean
       site-config-path:
