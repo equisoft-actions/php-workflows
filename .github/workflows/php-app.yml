@@ -1030,7 +1030,7 @@ jobs:
       - setup
       - image
 
-    if: needs.setup.outputs.is-release == 'true' && inputs.sentry-project != ''
+    if: ${{ needs.setup.outputs.is-release == 'true' && inputs.sentry-project != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
