@@ -1030,7 +1030,15 @@ jobs:
       - setup
       - image
 
-    if: ${{ needs.setup.outputs.is-release == 'true' && inputs.sentry-project != '' }}
+    if: |
+      always() &&
+      inputs.sentry-project != '' &&
+      needs.setup.outputs.is-release == 'true' &&
+      needs.image.result == 'success' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      !failure() &&
+      !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
