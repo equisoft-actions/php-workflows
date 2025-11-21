@@ -1043,14 +1043,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      
       - name: Download frontend build output
+        if: inputs.frontend
         uses: actions/download-artifact@v6
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
+      
       - name: Un-tar frontend build output
+        if: inputs.frontend
         working-directory: ${{ inputs.working-directory }}
         run: tar -xvf frontend-build-output.tar
+      
       - name: Create Sentry release
         uses: getsentry/action-release@v3
         env:
