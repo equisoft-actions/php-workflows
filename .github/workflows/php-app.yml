@@ -340,7 +340,7 @@ jobs:
 
       - name: Validate .tool-versions
         if: steps.changed-tool-versions-file.outputs.any_changed == 'true'
-        uses: equisoft-actions/validate-tool-versions@DOPS-6087/prepare-repository
+        uses: equisoft-actions/validate-tool-versions@v1
         with:
           working-directory: '.'
 
