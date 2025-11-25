@@ -313,8 +313,6 @@ jobs:
             output_file.write('images-matrix=')
             json.dump({"include": include}, output_file)
             output_file.write('\n')
-
-
   validate-tool-versions:
     name: Validate .tool-versions
     needs: [setup]
