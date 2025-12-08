@@ -314,6 +314,35 @@ jobs:
             json.dump({"include": include}, output_file)
             output_file.write('\n')
 
+  validate-tool-versions:
+    name: Validate .tool-versions
+    needs: [setup]
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runs-on: [self-hosted, amd64-xsmall]
+          - platform: linux/arm64
+            runs-on: [self-hosted, arm64-xsmall]
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Get changed .tool-versions file
+        id: changed-tool-versions-file
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            **.tool-versions
+
+      - name: Validate .tool-versions
+        if: steps.changed-tool-versions-file.outputs.any_changed == 'true'
+        uses: equisoft-actions/validate-tool-versions@v1
+        with:
+          working-directory: '.'
+
   phpunit:
     name: PHPUnit
     needs:
