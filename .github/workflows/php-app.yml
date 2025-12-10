@@ -321,9 +321,9 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runs-on: [self-hosted, amd64-xsmall]
+            runs-on: [self-hosted, amd64-small]
           - platform: linux/arm64
-            runs-on: [self-hosted, arm64-xsmall]
+            runs-on: [self-hosted, arm64-small]
     runs-on: ${{ matrix.runs-on }}
 
     steps:
