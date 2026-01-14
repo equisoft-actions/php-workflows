@@ -1090,7 +1090,7 @@ jobs:
         run: |
           VERSION="${{ needs.setup.outputs.version }}"
           RESOLVED_PREFIX="${{ inputs.sentry-sourcemaps-url-prefix }}"
-          RESOLVED_PREFIX="${RESOLVED_PREFIX//%VERSION%/${VERSION}}"
+          RESOLVED_PREFIX="${RESOLVED_PREFIX//%VERSION%/$VERSION}"
           echo "url-prefix=${RESOLVED_PREFIX}" >> $GITHUB_OUTPUT
 
       - name: Create Sentry release
