@@ -1084,7 +1084,15 @@ jobs:
         if: inputs.frontend
         working-directory: ${{ inputs.working-directory }}
         run: tar -xvf frontend-build-output.tar
-      
+
+      - name: Resolve URL prefix
+        id: resolve-prefix
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          RESOLVED_PREFIX="${{ inputs.sentry-sourcemaps-url-prefix }}"
+          RESOLVED_PREFIX="${RESOLVED_PREFIX//%VERSION%/${VERSION}}"
+          echo "url-prefix=${RESOLVED_PREFIX}" >> $GITHUB_OUTPUT
+
       - name: Create Sentry release
         uses: getsentry/action-release@v3
         env:
@@ -1096,7 +1104,7 @@ jobs:
           release_prefix: ''
           set_commits: auto
           inject: ${{ inputs.sentry-sourcemaps-inject-debug-id }}
-          url_prefix: ${{ inputs.sentry-sourcemaps-url-prefix }}
+          url_prefix: ${{ steps.resolve-prefix.outputs.url-prefix }}
           sourcemaps: ${{ inputs.sentry-sourcemaps-path }}
 
   workflow-status:
