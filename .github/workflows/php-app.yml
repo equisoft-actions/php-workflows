@@ -997,13 +997,29 @@ jobs:
             --format yaml \
             $arguments
 
+      - name: Normalize openapi filename
+        id: normalize-openapi-filename
+        shell: bash
+        run: |
+          OPENAPI_FILE=openapi/build/openapi.yaml
+          NORMALIZED_OPENAPI_FILE=openapi-${{ github.event.repository.name }}-${{ needs.setup.outputs.openapi-file }}-${{ needs.setup.outputs.version }}.yaml
+          cp "$OPENAPI_FILE" "$NORMALIZED_OPENAPI_FILE"
+          echo "normalized-openapi-file=${NORMALIZED_OPENAPI_FILE}" >> $GITHUB_OUTPUT
+
       - name: Store openapi.yaml
         uses: actions/upload-artifact@v6
         with:
-          name: openapi_yaml
-          path: openapi/build/openapi.yaml
+          name: ${{ steps.normalize-openapi-filename.outputs.normalized-openapi-file }}
+          path: ${{ steps.normalize-openapi-filename.outputs.normalized-openapi-file }}
           retention-days: 1
           if-no-files-found: error
+
+      - name: Upload openapi.yaml to release assets
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag' && needs.setup.outputs.is-release == 'true'
+        with:
+          files: |
+            ${{ steps.normalize-openapi-filename.outputs.normalized-openapi-file }}
 
   generate_sdk:
     strategy:
