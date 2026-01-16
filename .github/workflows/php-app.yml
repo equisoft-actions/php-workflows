@@ -1002,7 +1002,7 @@ jobs:
         shell: bash
         run: |
           OPENAPI_FILE=openapi/build/openapi.yaml
-          NORMALIZED_OPENAPI_FILE=openapi-${{ github.event.repository.name }}-${{ needs.setup.outputs.openapi-file }}-${{ needs.setup.outputs.version }}.yaml
+          NORMALIZED_OPENAPI_FILE=openapi-${{ github.event.repository.name }}-${{ needs.setup.outputs.version }}.yaml
           cp "$OPENAPI_FILE" "$NORMALIZED_OPENAPI_FILE"
           echo "normalized-openapi-file=${NORMALIZED_OPENAPI_FILE}" >> $GITHUB_OUTPUT
 
@@ -1088,14 +1088,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
+
       - name: Download frontend build output
         if: inputs.frontend
         uses: actions/download-artifact@v7
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
-      
+
       - name: Un-tar frontend build output
         if: inputs.frontend
         working-directory: ${{ inputs.working-directory }}
