@@ -757,7 +757,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
     needs:
@@ -835,7 +834,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
     steps:
@@ -908,7 +906,6 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.setup.outputs.publishable == 'true' &&
       !failure() &&
       !cancelled()
     outputs:
