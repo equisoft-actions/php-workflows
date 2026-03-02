@@ -688,7 +688,7 @@ jobs:
         run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: backend-build-output
           path: ${{ inputs.working-directory }}/backend-build-output.tar
@@ -742,7 +742,7 @@ jobs:
         run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}/frontend-build-output.tar
@@ -843,7 +843,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download backend build output
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: backend-build-output
           path: ${{ inputs.working-directory }}
@@ -854,7 +854,7 @@ jobs:
 
       - name: Download frontend build output
         if: inputs.frontend
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
@@ -998,7 +998,7 @@ jobs:
             $arguments
 
       - name: Store openapi.yaml
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: openapi_yaml
           path: openapi/build/openapi.yaml
@@ -1037,7 +1037,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: openapi_yaml
           path: openapi/build
@@ -1091,7 +1091,7 @@ jobs:
 
       - name: Download frontend build output
         if: inputs.frontend
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
