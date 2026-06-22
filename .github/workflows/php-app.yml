@@ -1015,7 +1015,7 @@ jobs:
           echo "normalized-openapi-file=${NORMALIZED_OPENAPI_FILE}" >> $GITHUB_OUTPUT
 
       - name: Upload openapi.yaml to release assets
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         if: github.ref_type == 'tag' && needs.setup.outputs.is-release == 'true'
         with:
           files: |
