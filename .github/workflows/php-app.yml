@@ -224,7 +224,7 @@ jobs:
       is-hotfix: ${{ steps.metadata.outputs.is-hotfix }}
       images-matrix: ${{ steps.complex-outputs.outputs.images-matrix }}
       run-php-long-checks: ${{ steps.outputs.outputs.run-php-long-checks }}
-      run-phpunit-it: ${{ steps.outputs.outputs.run-php-unit }}
+      run-phpunit-it: ${{ steps.outputs.outputs.run-phpunit-it }}
       run-stylelint: ${{ steps.outputs.outputs.run-stylelint }}
       with-asdf: ${{ steps.outputs.outputs.with-asdf }}
 
