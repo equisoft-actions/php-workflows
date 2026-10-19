@@ -688,7 +688,7 @@ jobs:
         run: tar -cvf backend-build-output.tar $(ls -d composer.json vendor/ apps/**/wsdl/*.xml 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: backend-build-output
           path: ${{ inputs.working-directory }}/backend-build-output.tar
@@ -742,7 +742,7 @@ jobs:
         run: tar -cvf frontend-build-output.tar $(ls -d package.json ${{ inputs.frontend-build-path }} 2>/dev/null)
 
       - name: Store build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}/frontend-build-output.tar
@@ -843,7 +843,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download backend build output
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: backend-build-output
           path: ${{ inputs.working-directory }}
@@ -854,7 +854,7 @@ jobs:
 
       - name: Download frontend build output
         if: inputs.frontend
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
@@ -998,7 +998,7 @@ jobs:
             $arguments
 
       - name: Store openapi.yaml
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: openapi_yaml
           path: openapi/build/openapi.yaml
@@ -1037,7 +1037,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: openapi_yaml
           path: openapi/build
@@ -1091,7 +1091,7 @@ jobs:
 
       - name: Download frontend build output
         if: inputs.frontend
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
