@@ -447,7 +447,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Psalm
-        uses: equisoft-actions/psalm@v2
+        uses: equisoft-actions/psalm@e47f79f055f217f63f204800953c9b60fa528b82
         with:
           default-branch: ${{ github.event.repository.default_branch }}
           extra-args: ${{ inputs.psalm-extra-args }}
@@ -491,7 +491,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: PHP_Codesniffer
-        uses: equisoft-actions/phpcs@v2
+        uses: equisoft-actions/phpcs@0977bb9727d218b2260593efcb7231c85e768276
         with:
           only-changed-files: ${{ inputs.phpcs-diff-only }}
           default-branch: ${{ github.event.repository.default_branch }}
@@ -1072,14 +1072,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
+
       - name: Download frontend build output
         if: inputs.frontend
         uses: actions/download-artifact@v7
         with:
           name: frontend-build-output
           path: ${{ inputs.working-directory }}
-      
+
       - name: Un-tar frontend build output
         if: inputs.frontend
         working-directory: ${{ inputs.working-directory }}
